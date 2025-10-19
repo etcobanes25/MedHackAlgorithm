@@ -1,0 +1,125 @@
+using System.CodeDom.Compiler;
+using System.Collections.Generic;
+using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
+using System.Text;
+using System;
+
+class Result
+{
+
+    /*
+     * Complete the 'bomberMan' function below.
+     *
+     * The function is expected to return a STRING_ARRAY.
+     * The function accepts following parameters:
+     *  1. INTEGER n
+     *  2. STRING_ARRAY grid
+     */
+
+    public static List<string> bomberMan(int n, List<string> grid)
+    {
+        if (n == 1)
+            return grid;
+
+        int rows = grid.Count;
+        int cols = grid[0].Length;
+
+        // full grid of bombs
+        List<string> fullGrid = new List<string>();
+        for (int i = 0; i < rows; i++)
+            fullGrid.Add(new string('O', cols));
+
+        // every even second -> full grid
+        if (n % 2 == 0)
+            return fullGrid;
+
+        // grid states repeat every 4 seconds after the first explosion
+        List<string> firstExplosion = Explode(grid);
+        List<string> secondExplosion = Explode(firstExplosion);
+
+        if (n % 4 == 3)
+            return firstExplosion;
+        else
+            return secondExplosion;
+    }
+
+    private static List<string> Explode(List<string> grid)
+    {
+        int R = grid.Count;
+        int C = grid[0].Length;
+        char[,] result = new char[R, C];
+
+        // start with all bombs
+        for (int i = 0; i < R; i++)
+            for (int j = 0; j < C; j++)
+                result[i, j] = 'O';
+
+        // detonate bombs
+        for (int i = 0; i < R; i++)
+        {
+            for (int j = 0; j < C; j++)
+            {
+                if (grid[i][j] == 'O')
+                {
+                    result[i, j] = '.';
+                    if (i > 0) result[i - 1, j] = '.';
+                    if (i < R - 1) result[i + 1, j] = '.';
+                    if (j > 0) result[i, j - 1] = '.';
+                    if (j < C - 1) result[i, j + 1] = '.';
+                }
+            }
+        }
+
+        // convert back to List<string>
+        List<string> output = new List<string>();
+        for (int i = 0; i < R; i++)
+        {
+            char[] row = new char[C];
+            for (int j = 0; j < C; j++)
+                row[j] = result[i, j];
+            output.Add(new string(row));
+        }
+
+        return output;
+    }
+
+}
+
+class Solution
+{
+    public static void Main(string[] args)
+    {
+        TextWriter textWriter = new StreamWriter(@System.Environment.GetEnvironmentVariable("OUTPUT_PATH"), true);
+
+        string[] firstMultipleInput = Console.ReadLine().TrimEnd().Split(' ');
+
+        int r = Convert.ToInt32(firstMultipleInput[0]);
+
+        int c = Convert.ToInt32(firstMultipleInput[1]);
+
+        int n = Convert.ToInt32(firstMultipleInput[2]);
+
+        List<string> grid = new List<string>();
+
+        for (int i = 0; i < r; i++)
+        {
+            string gridItem = Console.ReadLine();
+            grid.Add(gridItem);
+        }
+
+        List<string> result = Result.bomberMan(n, grid);
+
+        textWriter.WriteLine(String.Join("\n", result));
+
+        textWriter.Flush();
+        textWriter.Close();
+    }
+}
