@@ -1,0 +1,160 @@
+using System.CodeDom.Compiler;
+using System.Collections.Generic;
+using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
+using System.Text;
+using System;
+
+class Result
+{
+
+    /*
+     * Complete the 'twoPluses' function below.
+     *
+     * The function is expected to return an INTEGER.
+     * The function accepts STRING_ARRAY grid as parameter.
+     */
+
+    public static int twoPluses(List<string> grid)
+    {
+        int R = grid.Count;
+        int C = grid[0].Length;
+        List<Plus> pluses = new List<Plus>();
+
+        // Generate all possible pluses
+        for (int i = 0; i < R; i++)
+        {
+            for (int j = 0; j < C; j++)
+            {
+                if (grid[i][j] != 'G') continue;
+
+                int arm = 0;
+                while (IsValid(grid, i, j, arm))
+                {
+                    pluses.Add(new Plus(i, j, arm));
+                    arm++;
+                }
+            }
+        }
+
+        int maxProduct = 0;
+
+        // Compare all pairs of pluses
+        for (int a = 0; a < pluses.Count; a++)
+        {
+            for (int b = a + 1; b < pluses.Count; b++)
+            {
+                Plus p1 = pluses[a];
+                Plus p2 = pluses[b];
+
+                if (!Overlap(p1, p2))
+                {
+                    int product = p1.Area * p2.Area;
+                    if (product > maxProduct)
+                        maxProduct = product;
+                }
+            }
+        }
+
+        return maxProduct;
+    }
+
+    private static bool IsValid(List<string> grid, int r, int c, int arm)
+    {
+        int R = grid.Count;
+        int C = grid[0].Length;
+
+        if (r - arm < 0 || r + arm >= R || c - arm < 0 || c + arm >= C)
+            return false;
+
+        for (int k = 0; k <= arm; k++)
+        {
+            if (grid[r - k][c] != 'G') return false;
+            if (grid[r + k][c] != 'G') return false;
+            if (grid[r][c - k] != 'G') return false;
+            if (grid[r][c + k] != 'G') return false;
+        }
+
+        return true;
+    }
+
+    private static bool Overlap(Plus a, Plus b)
+    {
+        HashSet<(int, int)> cellsA = a.GetCells();
+        HashSet<(int, int)> cellsB = b.GetCells();
+
+        foreach (var cell in cellsA)
+        {
+            if (cellsB.Contains(cell))
+                return true;
+        }
+
+        return false;
+    }
+
+    private class Plus
+    {
+        public int R;
+        public int C;
+        public int Arm;
+        public int Area { get { return 1 + 4 * Arm; } }
+
+        public Plus(int r, int c, int arm)
+        {
+            R = r;
+            C = c;
+            Arm = arm;
+        }
+
+        public HashSet<(int, int)> GetCells()
+        {
+            HashSet<(int, int)> cells = new HashSet<(int, int)>();
+            cells.Add((R, C));
+            for (int i = 1; i <= Arm; i++)
+            {
+                cells.Add((R + i, C));
+                cells.Add((R - i, C));
+                cells.Add((R, C + i));
+                cells.Add((R, C - i));
+            }
+            return cells;
+        }
+    }
+
+}
+
+class Solution
+{
+    public static void Main(string[] args)
+    {
+        TextWriter textWriter = new StreamWriter(@System.Environment.GetEnvironmentVariable("OUTPUT_PATH"), true);
+
+        string[] firstMultipleInput = Console.ReadLine().TrimEnd().Split(' ');
+
+        int n = Convert.ToInt32(firstMultipleInput[0]);
+
+        int m = Convert.ToInt32(firstMultipleInput[1]);
+
+        List<string> grid = new List<string>();
+
+        for (int i = 0; i < n; i++)
+        {
+            string gridItem = Console.ReadLine();
+            grid.Add(gridItem);
+        }
+
+        int result = Result.twoPluses(grid);
+
+        textWriter.WriteLine(result);
+
+        textWriter.Flush();
+        textWriter.Close();
+    }
+}
