@@ -1,0 +1,115 @@
+using System.CodeDom.Compiler;
+using System.Collections.Generic;
+using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
+using System.Text;
+using System;
+
+class Result
+{
+
+    /*
+     * Complete the 'activityNotifications' function below.
+     *
+     * The function is expected to return an INTEGER.
+     * The function accepts following parameters:
+     *  1. INTEGER_ARRAY expenditure
+     *  2. INTEGER d
+     */
+
+    public static int activityNotifications(List<int> expenditure, int d)
+    {
+         int n = expenditure.Count;
+        if (n <= d) return 0;
+
+        // constraints: expenditure values are in range 0..200
+        const int MAXV = 200;
+        int[] freq = new int[MAXV + 1];
+
+        // initialize frequency for the first window
+        for (int i = 0; i < d; i++)
+            freq[expenditure[i]]++;
+
+        int notifications = 0;
+
+        for (int i = d; i < n; i++)
+        {
+            // find median(s) from freq
+            if (d % 2 == 1)
+            {
+                int medianPos = d / 2 + 1; // 1-based
+                int count = 0;
+                int medianVal = 0;
+                for (int v = 0; v <= MAXV; v++)
+                {
+                    count += freq[v];
+                    if (count >= medianPos)
+                    {
+                        medianVal = v;
+                        break;
+                    }
+                }
+
+                if (expenditure[i] >= 2 * medianVal) notifications++;
+            }
+            else
+            {
+                int leftPos = d / 2;     // 1-based
+                int rightPos = d / 2 + 1;
+                int count = 0;
+                int leftVal = -1, rightVal = -1;
+                for (int v = 0; v <= MAXV; v++)
+                {
+                    count += freq[v];
+                    if (leftVal == -1 && count >= leftPos)
+                        leftVal = v;
+                    if (count >= rightPos)
+                    {
+                        rightVal = v;
+                        break;
+                    }
+                }
+
+                // for even d, compare against sum of the two middle values
+                if (expenditure[i] >= leftVal + rightVal) notifications++;
+            }
+
+            // slide window: remove expenditure[i-d], add expenditure[i]
+            freq[expenditure[i - d]]--;
+            freq[expenditure[i]]++;
+        }
+
+        return notifications;
+    }
+
+}
+
+class Solution
+{
+    public static void Main(string[] args)
+    {
+        TextWriter textWriter = new StreamWriter(@System.Environment.GetEnvironmentVariable("OUTPUT_PATH"), true);
+
+        string[] firstMultipleInput = Console.ReadLine().TrimEnd().Split(' ');
+
+        int n = Convert.ToInt32(firstMultipleInput[0]);
+
+        int d = Convert.ToInt32(firstMultipleInput[1]);
+
+        List<int> expenditure = Console.ReadLine().TrimEnd().Split(' ').ToList().Select(expenditureTemp => Convert.ToInt32(expenditureTemp)).ToList();
+
+        int result = Result.activityNotifications(expenditure, d);
+
+        textWriter.WriteLine(result);
+
+        textWriter.Flush();
+        textWriter.Close();
+    }
+}
