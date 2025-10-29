@@ -1,0 +1,81 @@
+using System.CodeDom.Compiler;
+using System.Collections.Generic;
+using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
+using System.Text;
+using System;
+
+class Result
+{
+
+    /*
+     * Complete the 'sherlockAndAnagrams' function below.
+     *
+     * The function is expected to return an INTEGER.
+     * The function accepts STRING s as parameter.
+     */
+
+    public static int sherlockAndAnagrams(string s)
+    {
+        int n = s.Length;
+        var dict = new Dictionary<string, int>();
+
+        // Generate all substrings and count their sorted signatures
+        for (int i = 0; i < n; i++)
+        {
+            int[] freq = new int[26];
+            for (int j = i; j < n; j++)
+            {
+                freq[s[j] - 'a']++;
+
+                // Create a key representing letter frequency
+                string key = string.Join(",", freq);
+
+                if (!dict.ContainsKey(key))
+                    dict[key] = 0;
+                dict[key]++;
+            }
+        }
+
+        // Count pairs of anagram substrings
+        int total = 0;
+        foreach (var kvp in dict)
+        {
+            int count = kvp.Value;
+            if (count > 1)
+                total += count * (count - 1) / 2;
+        }
+
+        return total;
+    }
+
+}
+
+class Solution
+{
+    public static void Main(string[] args)
+    {
+        TextWriter textWriter = new StreamWriter(@System.Environment.GetEnvironmentVariable("OUTPUT_PATH"), true);
+
+        int q = Convert.ToInt32(Console.ReadLine().Trim());
+
+        for (int qItr = 0; qItr < q; qItr++)
+        {
+            string s = Console.ReadLine();
+
+            int result = Result.sherlockAndAnagrams(s);
+
+            textWriter.WriteLine(result);
+        }
+
+        textWriter.Flush();
+        textWriter.Close();
+    }
+}
