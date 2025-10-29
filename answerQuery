@@ -1,0 +1,153 @@
+using System.CodeDom.Compiler;
+using System.Collections.Generic;
+using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
+using System.Text;
+using System;
+
+class Result
+{
+     const int ALPH = 26;
+    const long MOD = 1000000007L;
+
+    // prefix[c,i] = count of char c in s[0..i-1]
+    static int[,] prefix;
+    static long[] fact, invFact; // factorials and inverse factorials
+    static int maxN = 0;
+
+    // modular exponentiation
+    static long ModPow(long a, long e)
+    {
+        long res = 1;
+        a %= MOD;
+        while (e > 0)
+        {
+            if ((e & 1) == 1) res = (res * a) % MOD;
+            a = (a * a) % MOD;
+            e >>= 1;
+        }
+        return res;
+    }
+
+    // precompute factorials up to n
+    static void PrecomputeFactorials(int n)
+    {
+        if (fact != null && n <= maxN) return;
+        maxN = Math.Max(maxN, n);
+        fact = new long[maxN + 1];
+        invFact = new long[maxN + 1];
+        fact[0] = 1;
+        for (int i = 1; i <= maxN; i++) fact[i] = (fact[i - 1] * i) % MOD;
+        invFact[maxN] = ModPow(fact[maxN], MOD - 2); // Fermat inverse
+        for (int i = maxN - 1; i >= 0; i--) invFact[i] = (invFact[i + 1] * (i + 1)) % MOD;
+    }
+    /*
+     * Complete the 'initialize' function below.
+     *
+     * The function accepts STRING s as parameter.
+     */
+
+    public static void initialize(string s)
+    {
+    // This function is called once before all queries.
+         int n = s.Length;
+        prefix = new int[ALPH, n + 1];
+
+        for (int c = 0; c < ALPH; c++) prefix[c, 0] = 0;
+
+        for (int i = 1; i <= n; i++)
+        {
+            int idx = s[i - 1] - 'a';
+            for (int c = 0; c < ALPH; c++)
+                prefix[c, i] = prefix[c, i - 1];
+            prefix[idx, i]++;
+        }
+
+        // Precompute factorials up to n (half-length can't exceed n)
+        PrecomputeFactorials(n);
+    }
+
+    /*
+     * Complete the 'answerQuery' function below.
+     *
+     * The function is expected to return an INTEGER.
+     * The function accepts following parameters:
+     *  1. INTEGER l
+     *  2. INTEGER r
+     */
+
+    public static int answerQuery(int l, int r)
+    {
+    // Return the answer for this query modulo 1000000007.
+         int[] freq = new int[ALPH];
+        for (int c = 0; c < ALPH; c++)
+            freq[c] = prefix[c, r] - prefix[c, l - 1];
+
+        // compute half counts and odd count
+        int halfLen = 0;
+        int oddCount = 0;
+        int[] half = new int[ALPH];
+        for (int c = 0; c < ALPH; c++)
+        {
+            half[c] = freq[c] / 2;
+            halfLen += half[c];
+            if ((freq[c] & 1) == 1) oddCount++;
+        }
+
+        // permutations of left-half = fact[halfLen] / prod(fact[half[c]])
+        long numerator = fact[halfLen];
+        long denomInv = 1;
+        for (int c = 0; c < ALPH; c++)
+        {
+            if (half[c] > 0)
+            {
+                denomInv = (denomInv * invFact[half[c]]) % MOD; // multiply by inverse factorial
+            }
+        }
+
+        long ways = (numerator * denomInv) % MOD;
+
+        // multiply by number of center choices: oddCount if >0 else 1
+        long centerChoices = oddCount > 0 ? oddCount : 1;
+        ways = (ways * centerChoices) % MOD;
+
+        return (int)ways;
+    }
+}
+
+class Solution
+{
+    public static void Main(string[] args)
+    {
+        TextWriter textWriter = new StreamWriter(@System.Environment.GetEnvironmentVariable("OUTPUT_PATH"), true);
+
+        string s = Console.ReadLine();
+
+        Result.initialize(s);
+
+        int q = Convert.ToInt32(Console.ReadLine().Trim());
+
+        for (int qItr = 0; qItr < q; qItr++)
+        {
+            string[] firstMultipleInput = Console.ReadLine().TrimEnd().Split(' ');
+
+            int l = Convert.ToInt32(firstMultipleInput[0]);
+
+            int r = Convert.ToInt32(firstMultipleInput[1]);
+
+            int result = Result.answerQuery(l, r);
+
+            textWriter.WriteLine(result);
+        }
+
+        textWriter.Flush();
+        textWriter.Close();
+    }
+}
